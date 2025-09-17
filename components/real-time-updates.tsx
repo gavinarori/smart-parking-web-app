@@ -1,65 +1,79 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import type { ParkingSlot } from "@/lib/types"
-import { getSlotUpdates } from "@/lib/mock-data"
+import { useEffect, useState, useCallback } from "react"
 
 interface RealTimeUpdatesProps {
-  onUpdate: (updates: { lotId: string; slots: ParkingSlot[] }[]) => void
+  onUpdate: (updates: any[]) => void
   isActive: boolean
 }
 
 export function RealTimeUpdates({ onUpdate, isActive }: RealTimeUpdatesProps) {
   const [connectionStatus, setConnectionStatus] = useState<"connecting" | "connected" | "disconnected">("disconnected")
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [eventSource, setEventSource] = useState<EventSource | null>(null)
 
-  useEffect(() => {
+  const connectToUpdates = useCallback(() => {
     if (!isActive) {
+      if (eventSource) {
+        eventSource.close()
+        setEventSource(null)
+      }
       setConnectionStatus("disconnected")
       return
     }
 
-    // Simulate WebSocket connection
     setConnectionStatus("connecting")
 
-    const connectTimeout = setTimeout(() => {
+    const es = new EventSource("/api/parking-lots/updates")
+
+    es.onopen = () => {
       setConnectionStatus("connected")
-    }, 1000)
+      console.log("[v0] Real-time updates connected")
+    }
 
-    // Simulate real-time updates every 5-10 seconds
-    const updateInterval = setInterval(
-      () => {
-        if (connectionStatus === "connected") {
-          const updates = getSlotUpdates()
-          const groupedUpdates = updates.reduce(
-            (acc, slot) => {
-              const lotId = slot.id.split("-slot-")[0]
-              if (!acc[lotId]) {
-                acc[lotId] = []
-              }
-              acc[lotId].push(slot)
-              return acc
-            },
-            {} as Record<string, ParkingSlot[]>,
-          )
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        console.log("[v0] Received update:", data)
 
-          const formattedUpdates = Object.entries(groupedUpdates).map(([lotId, slots]) => ({
-            lotId,
-            slots,
-          }))
-
-          onUpdate(formattedUpdates)
+        if (data.type === "slot_updates" && data.updates) {
+          onUpdate(data.updates)
           setLastUpdate(new Date())
         }
-      },
-      Math.random() * 5000 + 5000,
-    ) // 5-10 seconds
+      } catch (error) {
+        console.error("[v0] Error parsing update:", error)
+      }
+    }
+
+    es.onerror = (error) => {
+      console.error("[v0] EventSource error:", error)
+      setConnectionStatus("disconnected")
+
+      // Attempt to reconnect after 5 seconds
+      setTimeout(() => {
+        if (isActive) {
+          connectToUpdates()
+        }
+      }, 5000)
+    }
+
+    setEventSource(es)
 
     return () => {
-      clearTimeout(connectTimeout)
-      clearInterval(updateInterval)
+      es.close()
     }
-  }, [isActive, connectionStatus, onUpdate])
+  }, [isActive, onUpdate, eventSource])
+
+  useEffect(() => {
+    const cleanup = connectToUpdates()
+
+    return () => {
+      if (cleanup) cleanup()
+      if (eventSource) {
+        eventSource.close()
+      }
+    }
+  }, [connectToUpdates])
 
   return (
     <div className="flex items-center gap-2 text-sm">

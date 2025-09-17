@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ export default function SignupPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { register } = useAuth()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -49,25 +51,17 @@ export default function SignupPage() {
       return
     }
 
-    // Mock registration - replace with real auth logic
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Store user session (mock)
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email: formData.email,
-          name: formData.name,
-          phone: formData.phone,
-          vehicleInfo: formData.vehicleInfo,
-        }),
-      )
-
+      await register({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        vehicleInfo: formData.vehicleInfo,
+        password: formData.password,
+      })
       router.push("/dashboard")
     } catch (err) {
-      setError("Registration failed. Please try again.")
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.")
     } finally {
       setIsLoading(false)
     }

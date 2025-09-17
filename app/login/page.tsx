@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/lib/hooks/useAuth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -17,27 +18,18 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
-    // Mock authentication - replace with real auth logic
     try {
-      if (email && password) {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        // Store user session (mock)
-        localStorage.setItem("user", JSON.stringify({ email, name: "User" }))
-
-        router.push("/dashboard")
-      } else {
-        setError("Please fill in all fields")
-      }
+      await login(email, password)
+      router.push("/dashboard")
     } catch (err) {
-      setError("Login failed. Please try again.")
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }

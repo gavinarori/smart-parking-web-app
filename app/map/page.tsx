@@ -9,12 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { mockParkingLots } from "@/lib/mock-data"
-import type { ParkingLot, ParkingSlot } from "@/lib/types"
+import { useParkingLots } from "@/lib/hooks/useParkingLots"
+import type { ParkingSlot } from "@/lib/models/ParkingLot"
 import { MapPin } from "lucide-react"
 
 export default function MapPage() {
-  const [parkingLots, setParkingLots] = useState<ParkingLot[]>(mockParkingLots)
+  const { parkingLots, loading, error, refetch } = useParkingLots()
   const [selectedLot, setSelectedLot] = useState<string | null>(null)
   const [selectedSlot, setSelectedSlot] = useState<ParkingSlot | null>(null)
   const [showSlots, setShowSlots] = useState(false)
@@ -23,31 +23,10 @@ export default function MapPage() {
 
   const selectedLotData = selectedLot ? parkingLots.find((lot) => lot.id === selectedLot) : null
 
-  const handleRealTimeUpdate = (updates: { lotId: string; slots: ParkingSlot[] }[]) => {
-    setParkingLots((prevLots) => {
-      return prevLots.map((lot) => {
-        const update = updates.find((u) => u.lotId === lot.id)
-        if (!update) return lot
-
-        const updatedSlots = lot.slots.map((slot) => {
-          const updatedSlot = update.slots.find((s) => s.id === slot.id)
-          return updatedSlot || slot
-        })
-
-        // Recalculate lot statistics
-        const available = updatedSlots.filter((s) => s.status === "available").length
-        const occupied = updatedSlots.filter((s) => s.status === "occupied").length
-        const reserved = updatedSlots.filter((s) => s.status === "reserved").length
-
-        return {
-          ...lot,
-          slots: updatedSlots,
-          availableSlots: available,
-          occupiedSlots: occupied,
-          reservedSlots: reserved,
-        }
-      })
-    })
+  const handleRealTimeUpdate = (updates: any[]) => {
+    console.log("[v0] Processing real-time updates:", updates)
+    // Refresh parking lots data when updates are received
+    refetch()
   }
 
   const handleLotSelect = (lotId: string) => {
@@ -63,6 +42,35 @@ export default function MapPage() {
     if (selectedSlot && selectedLot) {
       router.push(`/reserve?lotId=${selectedLot}&slotId=${selectedSlot.id}`)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-sm text-muted-foreground">Loading parking data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button onClick={refetch} className="w-full">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -196,7 +204,7 @@ export default function MapPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Last updated:</span>
-                      <span className="text-sm">{selectedSlot.lastUpdated.toLocaleTimeString()}</span>
+                      <span className="text-sm">{new Date(selectedSlot.lastUpdated).toLocaleTimeString()}</span>
                     </div>
                   </div>
 
@@ -227,7 +235,11 @@ export default function MapPage() {
                 <div className="flex justify-between">
                   <span>Average price:</span>
                   <span className="font-semibold">
-                    ${(parkingLots.reduce((sum, lot) => sum + lot.pricePerHour, 0) / parkingLots.length).toFixed(2)}/hr
+                    $
+                    {parkingLots.length > 0
+                      ? (parkingLots.reduce((sum, lot) => sum + lot.pricePerHour, 0) / parkingLots.length).toFixed(2)
+                      : "0.00"}
+                    /hr
                   </span>
                 </div>
               </CardContent>

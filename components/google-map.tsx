@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import type { ParkingLot, ParkingSlot } from "@/lib/types"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { loadGoogleMaps, createMarkerIcon, createInfoWindowContent } from "@/lib/google-maps"
+import type { ParkingLot, ParkingSlot } from "@/lib/models/ParkingLot"
+import { google } from "google-maps"
 
 interface GoogleMapProps {
   parkingLots: ParkingLot[]
@@ -10,13 +12,6 @@ interface GoogleMapProps {
   onSlotSelect?: (slot: ParkingSlot) => void
   showSlots?: boolean
   className?: string
-}
-
-declare global {
-  interface Window {
-    google: any
-    initMap: () => void
-  }
 }
 
 export function GoogleMap({
@@ -28,154 +23,178 @@ export function GoogleMap({
   className = "w-full h-96",
 }: GoogleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
+  const mapInstanceRef = useRef<google.maps.Map | null>(null)
+  const markersRef = useRef<google.maps.Marker[]>([])
+  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load Google Maps script
+  // Global functions for info window buttons
   useEffect(() => {
-    if (window.google) {
-      setIsLoaded(true)
-      return
-    }
+    if (typeof window !== "undefined") {
+      window.selectParkingLot = (lotId: string) => {
+        onLotSelect?.(lotId)
+        if (infoWindowRef.current) {
+          infoWindowRef.current.close()
+        }
+      }
 
-    const script = document.createElement("script")
-    script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap`
-    script.async = true
-    script.defer = true
-
-    window.initMap = () => {
-      setIsLoaded(true)
-    }
-
-    document.head.appendChild(script)
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script)
+      window.selectParkingSlot = (slotId: string) => {
+        const slot = parkingLots.flatMap((lot) => lot.slots).find((s) => s.id === slotId)
+        if (slot) {
+          onSlotSelect?.(slot)
+          if (infoWindowRef.current) {
+            infoWindowRef.current.close()
+          }
+        }
       }
     }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        delete window.selectParkingLot
+        delete window.selectParkingSlot
+      }
+    }
+  }, [parkingLots, onLotSelect, onSlotSelect])
+
+  // Load Google Maps
+  useEffect(() => {
+    const initializeMap = async () => {
+      try {
+        await loadGoogleMaps()
+        setIsLoaded(true)
+        setError(null)
+      } catch (err) {
+        console.error("Failed to load Google Maps:", err)
+        setError(err instanceof Error ? err.message : "Failed to load Google Maps")
+      }
+    }
+
+    initializeMap()
   }, [])
 
-  // Initialize map
+  // Initialize map instance
   useEffect(() => {
-    if (!isLoaded || !mapRef.current || !window.google) return
+    if (!isLoaded || !mapRef.current || mapInstanceRef.current) return
 
-    const map = new window.google.maps.Map(mapRef.current, {
-      zoom: 13,
-      center: { lat: 40.7128, lng: -74.006 }, // Default to NYC
-      styles: [
-        {
-          featureType: "poi",
-          elementType: "labels",
-          stylers: [{ visibility: "off" }],
-        },
-      ],
-    })
+    try {
+      const map = new google.maps.Map(mapRef.current, {
+        zoom: 13,
+        center: parkingLots.length > 0 ? parkingLots[0].coordinates : { lat: 40.7128, lng: -74.006 }, // Default to NYC
+        styles: [
+          {
+            featureType: "poi.business",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
+          {
+            featureType: "transit.station",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
+        ],
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true,
+      })
 
-    mapInstanceRef.current = map
-  }, [isLoaded])
+      mapInstanceRef.current = map
+      infoWindowRef.current = new google.maps.InfoWindow()
+    } catch (err) {
+      console.error("Failed to initialize map:", err)
+      setError("Failed to initialize map")
+    }
+  }, [isLoaded, parkingLots])
 
-  // Update markers when parking lots change
-  useEffect(() => {
-    if (!mapInstanceRef.current || !window.google) return
-
-    // Clear existing markers
+  // Clear all markers
+  const clearMarkers = useCallback(() => {
     markersRef.current.forEach((marker) => marker.setMap(null))
     markersRef.current = []
+  }, [])
 
-    const bounds = new window.google.maps.LatLngBounds()
+  // Update markers when data changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !isLoaded) return
+
+    clearMarkers()
+
+    const bounds = new google.maps.LatLngBounds()
+    let hasValidCoordinates = false
 
     parkingLots.forEach((lot) => {
       // Create lot marker
-      const lotMarker = new window.google.maps.Marker({
+      const lotMarker = new google.maps.Marker({
         position: lot.coordinates,
         map: mapInstanceRef.current,
         title: lot.name,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: lot.availableSlots > 10 ? "#15803d" : lot.availableSlots > 5 ? "#84cc16" : "#dc2626",
-          fillOpacity: 0.8,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-        },
+        icon: createMarkerIcon(
+          "lot",
+          lot.availableSlots > 10 ? "available" : lot.availableSlots > 0 ? "reserved" : "occupied",
+          selectedLot === lot.id,
+        ),
       })
 
-      // Add info window for lot
-      const lotInfoWindow = new window.google.maps.InfoWindow({
-        content: `
-          <div class="p-2">
-            <h3 class="font-bold text-lg">${lot.name}</h3>
-            <p class="text-sm text-gray-600">${lot.address}</p>
-            <div class="mt-2 space-y-1">
-              <div class="flex justify-between">
-                <span>Available:</span>
-                <span class="font-semibold text-green-600">${lot.availableSlots}</span>
-              </div>
-              <div class="flex justify-between">
-                <span>Price:</span>
-                <span class="font-semibold">$${lot.pricePerHour}/hr</span>
-              </div>
-            </div>
-          </div>
-        `,
-      })
-
+      // Add click listener for lot marker
       lotMarker.addListener("click", () => {
-        lotInfoWindow.open(mapInstanceRef.current, lotMarker)
-        onLotSelect?.(lot.id)
+        if (infoWindowRef.current) {
+          infoWindowRef.current.setContent(createInfoWindowContent("lot", lot))
+          infoWindowRef.current.open(mapInstanceRef.current, lotMarker)
+        }
       })
 
       markersRef.current.push(lotMarker)
       bounds.extend(lot.coordinates)
+      hasValidCoordinates = true
 
       // Add slot markers if showing slots and this lot is selected
       if (showSlots && selectedLot === lot.id) {
         lot.slots.forEach((slot) => {
-          const slotColor = slot.status === "available" ? "#15803d" : slot.status === "reserved" ? "#84cc16" : "#dc2626"
-
-          const slotMarker = new window.google.maps.Marker({
+          const slotMarker = new google.maps.Marker({
             position: slot.coordinates,
             map: mapInstanceRef.current,
             title: `Slot ${slot.number} - ${slot.status}`,
-            icon: {
-              path: window.google.maps.SymbolPath.CIRCLE,
-              scale: 6,
-              fillColor: slotColor,
-              fillOpacity: 0.9,
-              strokeColor: "#ffffff",
-              strokeWeight: 1,
-            },
-          })
-
-          const slotInfoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div class="p-2">
-                <h4 class="font-bold">Slot ${slot.number}</h4>
-                <p class="text-sm capitalize">${slot.status}</p>
-                ${slot.status === "available" ? '<button class="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm">Reserve</button>' : ""}
-              </div>
-            `,
+            icon: createMarkerIcon("slot", slot.status, false),
           })
 
           slotMarker.addListener("click", () => {
-            slotInfoWindow.open(mapInstanceRef.current, slotMarker)
-            if (slot.status === "available") {
-              onSlotSelect?.(slot)
+            if (infoWindowRef.current) {
+              infoWindowRef.current.setContent(createInfoWindowContent("slot", slot))
+              infoWindowRef.current.open(mapInstanceRef.current, slotMarker)
             }
           })
 
           markersRef.current.push(slotMarker)
+          bounds.extend(slot.coordinates)
         })
       }
     })
 
     // Fit map to show all markers
-    if (parkingLots.length > 0) {
-      mapInstanceRef.current.fitBounds(bounds)
+    if (hasValidCoordinates && mapInstanceRef.current) {
+      if (parkingLots.length === 1 && !showSlots) {
+        mapInstanceRef.current.setCenter(parkingLots[0].coordinates)
+        mapInstanceRef.current.setZoom(15)
+      } else {
+        mapInstanceRef.current.fitBounds(bounds)
+      }
     }
-  }, [parkingLots, selectedLot, showSlots, onLotSelect, onSlotSelect])
+  }, [parkingLots, selectedLot, showSlots, isLoaded, clearMarkers])
+
+  if (error) {
+    return (
+      <div
+        className={`${className} bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-muted-foreground/25`}
+      >
+        <div className="text-center p-6">
+          <div className="text-destructive mb-2">⚠️</div>
+          <p className="text-sm text-muted-foreground mb-2">Failed to load map</p>
+          <p className="text-xs text-muted-foreground">{error}</p>
+          <p className="text-xs text-muted-foreground mt-2">Please check your Google Maps API key configuration</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isLoaded) {
     return (
@@ -189,4 +208,12 @@ export function GoogleMap({
   }
 
   return <div ref={mapRef} className={className} />
+}
+
+// Extend Window interface for global functions
+declare global {
+  interface Window {
+    selectParkingLot: (lotId: string) => void
+    selectParkingSlot: (slotId: string) => void
+  }
 }
