@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { NotificationsDropdown } from "@/components/notifications-dropdown"
+import { PWAInstallButton } from "@/components/pwa-install-button"
 import { mockParkingLots } from "@/lib/mock-data"
 import { MapPin, Car, Clock, Map, BarChart3 } from "lucide-react"
 
@@ -51,6 +52,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Welcome back, {user.name}!</p>
           </div>
           <div className="flex gap-2">
+            <PWAInstallButton />
             <NotificationsDropdown userId={user.email} />
             <Button asChild variant="outline">
               <Link href="/analytics">

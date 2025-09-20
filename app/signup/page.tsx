@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/hooks/useAuth"
+import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -173,6 +174,7 @@ export default function SignupPage() {
           </form>
         </CardContent>
       </Card>
+      <PWAInstallPrompt />
     </div>
   )
 }

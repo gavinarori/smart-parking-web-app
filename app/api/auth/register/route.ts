@@ -34,9 +34,10 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       message: "Registration successful",
       user: userSession,
+      token, // Include token in response for localStorage
     })
 
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie as backup
     response.cookies.set("auth-token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, createContext, useContext, type ReactNode } from "react"
 import type { UserSession } from "@/lib/models/User"
+import { getStoredToken, setStoredToken, removeStoredToken, isTokenExpired } from "@/lib/auth-client"
 
 interface AuthContextType {
   user: UserSession | null
@@ -31,13 +32,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth/me")
-      if (response.ok) {
-        const data = await response.json()
-        setUser(data.user)
+      // Check localStorage first
+      const token = getStoredToken()
+      if (token && !isTokenExpired(token)) {
+        const response = await fetch("/api/auth/me", {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data.user)
+        } else {
+          // Token is invalid, remove it
+          removeStoredToken()
+        }
+      } else if (token && isTokenExpired(token)) {
+        // Token is expired, remove it
+        removeStoredToken()
       }
     } catch (error) {
       console.error("Auth check failed:", error)
+      removeStoredToken()
     } finally {
       setLoading(false)
     }
@@ -56,6 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error || "Login failed")
     }
 
+    // Store token in localStorage
+    if (data.token) {
+      setStoredToken(data.token)
+    }
     setUser(data.user)
   }
 
@@ -72,11 +92,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(data.error || "Registration failed")
     }
 
+    // Store token in localStorage
+    if (data.token) {
+      setStoredToken(data.token)
+    }
     setUser(data.user)
   }
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
+    // Clear token from localStorage
+    removeStoredToken()
     setUser(null)
   }
 
