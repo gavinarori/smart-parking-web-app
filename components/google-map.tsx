@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import { loadGoogleMaps, createMarkerIcon, createInfoWindowContent } from "@/lib/google-maps"
 import type { ParkingLot, ParkingSlot } from "@/lib/models/ParkingLot"
-import { google } from "google-maps"
 
 interface GoogleMapProps {
   parkingLots: ParkingLot[]
@@ -80,8 +79,8 @@ export function GoogleMap({
 
     try {
       const map = new google.maps.Map(mapRef.current, {
-        zoom: 13,
-        center: parkingLots.length > 0 ? parkingLots[0].coordinates : { lat: 40.7128, lng: -74.006 }, // Default to NYC
+        zoom: 21,
+        center: parkingLots.length > 0 ? parkingLots[0].coordinates : { lat: -0.398440 , lng: 36.961078 }, // Default to NYC
         styles: [
           {
             featureType: "poi.business",
@@ -94,7 +93,8 @@ export function GoogleMap({
             stylers: [{ visibility: "off" }],
           },
         ],
-        mapTypeControl: false,
+         mapTypeId: google.maps.MapTypeId.SATELLITE, // 👈 add this
+         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: true,
       })
