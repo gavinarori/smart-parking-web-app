@@ -1,13 +1,6 @@
-const CACHE_NAME = 'smart-parking-v1'
+const CACHE_NAME = 'smart-parking-v2'
 const urlsToCache = [
   '/',
-  '/login',
-  '/signup',
-  '/dashboard',
-  '/map',
-  '/parking',
-  '/reservations',
-  '/reserve',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -26,14 +19,44 @@ self.addEventListener('install', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request)
-      }
+  const { request } = event
+  const url = new URL(request.url)
+
+  // Never cache auth pages or API requests
+  const isAuthPage = url.pathname.startsWith('/login') || url.pathname.startsWith('/signup')
+  const isAPI = url.pathname.startsWith('/api/')
+
+  if (isAuthPage || isAPI) {
+    return // Let the request go to network
+  }
+
+  // Network-first for HTML navigations
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+          return response
+        })
+        .catch(() => caches.match(request))
     )
-  )
+    return
+  }
+
+  // Cache-first for other GET requests
+  if (request.method === 'GET') {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((response) => {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy))
+          return response
+        })
+      })
+    )
+  }
 })
 
 // Activate event

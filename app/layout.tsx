@@ -44,10 +44,9 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <AuthProvider>
-          <Suspense fallback={null}>{children}</Suspense>
+          <Suspense >{children}</Suspense>
         </AuthProvider>
         <PWARegister />
-        <Analytics />
       </body>
     </html>
   )
