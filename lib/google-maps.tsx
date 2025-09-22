@@ -1,5 +1,4 @@
 import { Loader } from "@googlemaps/js-api-loader"
-import { google } from "googlemaps"
 
 let googleMapsLoader: Loader | null = null
 
