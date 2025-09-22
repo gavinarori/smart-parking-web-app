@@ -14,8 +14,13 @@ export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [isInstalled, setIsInstalled] = useState(false)
+  const [isAuthRoute, setIsAuthRoute] = useState(false)
 
   useEffect(() => {
+    // Avoid showing on auth routes
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : ''
+    setIsAuthRoute(pathname.startsWith('/login') || pathname.startsWith('/signup'))
+
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true)
@@ -25,8 +30,12 @@ export function PWAInstallPrompt() {
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
+      // Respect recent dismissal (e.g., 7 days)
+      const dismissedAt = localStorage.getItem('pwa-install-dismissed')
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+      const canShow = !dismissedAt || (Date.now() - Number(dismissedAt)) > sevenDaysMs
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setShowInstallPrompt(true)
+      setShowInstallPrompt(canShow)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -65,7 +74,7 @@ export function PWAInstallPrompt() {
   }
 
   // Don't show if already installed or recently dismissed
-  if (isInstalled || !showInstallPrompt) {
+  if (isInstalled || isAuthRoute || !showInstallPrompt) {
     return null
   }
 

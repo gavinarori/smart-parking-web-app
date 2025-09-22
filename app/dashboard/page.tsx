@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -9,37 +9,27 @@ import { NotificationsDropdown } from "@/components/notifications-dropdown"
 import { PWAInstallButton } from "@/components/pwa-install-button"
 import { mockParkingLots } from "@/lib/mock-data"
 import { MapPin, Car, Clock, Map, BarChart3 } from "lucide-react"
-
-interface User {
-  email: string
-  name: string
-  phone?: string
-  vehicleInfo?: string
-}
+import { useAuth } from "@/lib/hooks/useAuth"
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
+  const { user, loading, logout } = useAuth()
 
   const totalAvailableSlots = mockParkingLots.reduce((sum, lot) => sum + lot.availableSlots, 0)
   const nearbyLots = mockParkingLots.slice(0, 3) // Show top 3 lots
 
   useEffect(() => {
-    // Check if user is logged in
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
-    } else {
+    if (!loading && !user) {
       router.push("/login")
     }
-  }, [router])
+  }, [loading, user, router])
 
-  const handleLogout = () => {
-    localStorage.removeItem("user")
+  const handleLogout = async () => {
+    await logout()
     router.push("/")
   }
 
-  if (!user) {
+  if (loading || !user) {
     return <div>Loading...</div>
   }
 

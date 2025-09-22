@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/hooks/useAuth"
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+// Removed install prompt from login to avoid blocking navigation
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </form>
         </CardContent>
       </Card>
-      <PWAInstallPrompt />
+      {/* Intentionally not showing PWA install prompt on login */}
     </div>
   )
 }

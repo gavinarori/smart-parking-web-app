@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ email, password }),
     })
 
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(userData),
     })
 
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" })
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
     // Clear token from localStorage
     removeStoredToken()
     setUser(null)
