@@ -53,10 +53,6 @@ export function ParkingLotCard({ lot, onViewDetails }: ParkingLotCardProps) {
 
         <div className="flex justify-between items-center text-sm">
           <div className="flex items-center gap-1">
-            <DollarSign className="h-3 w-3" />
-            <span>${lot.pricePerHour}/hour</span>
-          </div>
-          <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span>
               {lot.operatingHours.open} - {lot.operatingHours.close}

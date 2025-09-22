@@ -98,29 +98,6 @@ export default function ParkingLotDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Pricing
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">${lot.pricePerHour}</div>
-              <div className="text-sm text-muted-foreground">per hour</div>
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>First hour:</span>
-                  <span>${lot.pricePerHour}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Daily max:</span>
-                  <span>${(lot.pricePerHour * 8).toFixed(2)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 Hours
               </CardTitle>

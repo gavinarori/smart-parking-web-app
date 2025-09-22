@@ -7,7 +7,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-primary">SmartPark</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">Spot yangu</CardTitle>
           <CardDescription className="text-lg">Find and reserve parking spots in real-time</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

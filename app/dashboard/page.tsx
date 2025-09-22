@@ -38,7 +38,7 @@ export default function DashboardPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-primary">SmartPark Dashboard</h1>
+            <h1 className="text-3xl font-bold text-primary">Spot yangu Dashboard</h1>
             <p className="text-muted-foreground">Welcome back, {user.name}!</p>
           </div>
           <div className="flex gap-2">
@@ -85,16 +85,6 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">This Month</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-accent">$45.50</div>
-              <p className="text-sm text-muted-foreground">total spent</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -131,7 +121,6 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-primary">{lot.availableSlots} available</div>
-                    <div className="text-sm text-muted-foreground">${lot.pricePerHour}/hour</div>
                   </div>
                 </div>
               ))}

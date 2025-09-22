@@ -73,7 +73,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-primary">Create Account</CardTitle>
-          <CardDescription>Join SmartPark to find and reserve parking spots</CardDescription>
+          <CardDescription>Join Spot yangu to find and reserve parking spots</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
