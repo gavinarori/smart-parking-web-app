@@ -2,57 +2,19 @@ import type { ParkingLot, ParkingSlot } from "./types"
 
 
 export const mockParkingLots: ParkingLot[] = [
-  {
-    id: "lot-1",
-    name: "Main Gate Parking",
-    address: "Dedan Kimathi University, Main Entrance, Nyeri",
-    coordinates: { lat: -0.39844, lng: 36.961078 },
-    totalSlots: 80,
-    availableSlots: 25,
-    occupiedSlots: 50,
-    reservedSlots: 5,
-    pricePerHour: 20.0,
-    operatingHours: { open: "06:00", close: "22:00" },
-    slots: generateMockSlots("lot-1", 80, { lat: -0.39844, lng: 36.961078 }),
-  },
+
   {
     id: "lot-2",
     name: "Library Parking",
     address: "Dedan Kimathi University, Library Zone, Nyeri",
     coordinates: { lat: -0.3979, lng: 36.9622 },
-    totalSlots: 60,
-    availableSlots: 15,
-    occupiedSlots: 40,
-    reservedSlots: 5,
+    totalSlots: 10,
+    availableSlots: 4,
+    occupiedSlots: 2,
+    reservedSlots: 4,
     pricePerHour: 15.0,
     operatingHours: { open: "07:00", close: "21:00" },
     slots: generateMockSlots("lot-2", 60, { lat: -0.3979, lng: 36.9622 }),
-  },
-  {
-    id: "lot-3",
-    name: "Engineering Block Parking",
-    address: "Dedan Kimathi University, Engineering Faculty, Nyeri",
-    coordinates: { lat: -0.3992, lng: 36.9605 },
-    totalSlots: 40,
-    availableSlots: 10,
-    occupiedSlots: 25,
-    reservedSlots: 5,
-    pricePerHour: 10.0,
-    operatingHours: { open: "06:30", close: "20:00" },
-    slots: generateMockSlots("lot-3", 40, { lat: -0.3992, lng: 36.9605 }),
-  },
-  {
-    id: "lot-4",
-    name: "Hostels Parking",
-    address: "Dedan Kimathi University, Hostel Zone, Nyeri",
-    coordinates: { lat: -0.4001, lng: 36.9628 },
-    totalSlots: 100,
-    availableSlots: 40,
-    occupiedSlots: 50,
-    reservedSlots: 10,
-    pricePerHour: 10.0,
-    operatingHours: { open: "00:00", close: "23:59" }, // 24 hours
-    slots: generateMockSlots("lot-4", 100, { lat: -0.4001, lng: 36.9628 }),
   },
 ]
 

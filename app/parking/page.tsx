@@ -6,64 +6,62 @@ import Link from "next/link"
 import { ParkingLotCard } from "@/components/parking-lot-card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockParkingLots } from "@/lib/mock-data"
+import { Card, CardContent } from "@/components/ui/card"
 import type { ParkingLot } from "@/lib/types"
 import { Search, MapPin, RefreshCw as Refresh, Map } from "lucide-react"
 
 export default function ParkingPage() {
-  const [parkingLots, setParkingLots] = useState<ParkingLot[]>(mockParkingLots)
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Filter parking lots based on search term
+  // -------------------------------
+  // Fetch parking lots from backend
+  // -------------------------------
+  const fetchParkingLots = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch("http://localhost:4000/api/lots")
+      const data = await res.json()
+      setParkingLots(data)
+    } catch (error) {
+      console.error("Failed to fetch parking lots", error)
+    }
+    setIsLoading(false)
+  }
+
+  // Load on mount
+  useEffect(() => {
+    fetchParkingLots()
+  }, [])
+
+  // Auto refresh every 30s
+  useEffect(() => {
+    const interval = setInterval(fetchParkingLots, 30000)
+    return () => clearInterval(interval)
+  }, [])
+
   const filteredLots = parkingLots.filter(
     (lot) =>
       lot.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       lot.address.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Simulate real-time updates
-  const refreshData = async () => {
-    setIsLoading(true)
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+ const handleViewDetails = (lotId: string) => {
+  console.log(lotId)
+  router.push(`/parking/${lotId}`)
+}
 
-    // Update available slots randomly
-    const updatedLots = parkingLots.map((lot) => {
-      const change = Math.floor(Math.random() * 6) - 3 // -3 to +3 change
-      const newAvailable = Math.max(0, Math.min(lot.totalSlots - lot.reservedSlots, lot.availableSlots + change))
-      const newOccupied = lot.totalSlots - newAvailable - lot.reservedSlots
-
-      return {
-        ...lot,
-        availableSlots: newAvailable,
-        occupiedSlots: newOccupied,
-      }
-    })
-
-    setParkingLots(updatedLots)
-    setIsLoading(false)
-  }
-
-  const handleViewDetails = (lotId: string) => {
-    router.push(`/parking/${lotId}`)
-  }
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(refreshData, 30000)
-    return () => clearInterval(interval)
-  }, [parkingLots])
 
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto">
+        {/* HEADER */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-primary">Find Parking</h1>
-            <p className="text-muted-foreground">Real-time parking availability across the city</p>
+            <p className="text-muted-foreground">Real-time parking availability</p>
           </div>
           <div className="flex gap-2">
             <Button asChild variant="outline">
@@ -72,21 +70,21 @@ export default function ParkingPage() {
                 Map View
               </Link>
             </Button>
-            <Button onClick={refreshData} disabled={isLoading} variant="outline">
+            <Button onClick={fetchParkingLots} disabled={isLoading} variant="outline">
               <Refresh className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
             </Button>
           </div>
         </div>
 
-        {/* Search and Filters */}
+        {/* SEARCH */}
         <Card className="mb-6">
           <CardContent className="pt-6">
             <div className="flex gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by location or parking lot name..."
+                  placeholder="Search parking lots..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -100,55 +98,23 @@ export default function ParkingPage() {
           </CardContent>
         </Card>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Available</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {filteredLots.reduce((sum, lot) => sum + lot.availableSlots, 0)}
-              </div>
-              <p className="text-xs text-muted-foreground">spots across {filteredLots.length} locations</p>
-            </CardContent>
-          </Card>
-
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Best Availability</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-accent">
-                {Math.max(...filteredLots.map((lot) => Math.round((lot.availableSlots / lot.totalSlots) * 100)))}%
-              </div>
-              <p className="text-xs text-muted-foreground">
-                at{" "}
-                {
-                  filteredLots.find(
-                    (lot) =>
-                      lot.availableSlots / lot.totalSlots ===
-                      Math.max(...filteredLots.map((l) => l.availableSlots / l.totalSlots)),
-                  )?.name
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Parking Lots Grid */}
+        {/* GRID */}
         {filteredLots.length === 0 ? (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No parking lots found matching your search.</p>
+              <p className="text-muted-foreground">No results found.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredLots.map((lot) => (
-              <ParkingLotCard key={lot.id} lot={lot} onViewDetails={handleViewDetails} />
-            ))}
+  <ParkingLotCard 
+    key={lot.lotId} 
+    lot={lot} 
+    onViewDetails={handleViewDetails} 
+  />
+))}
+
           </div>
         )}
       </div>
