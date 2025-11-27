@@ -12,7 +12,14 @@ interface SlotGridProps {
 }
 
 export function SlotGrid({ slots, onSlotSelect }: SlotGridProps) {
-  const getSlotColor = (status: ParkingSlot["status"]) => {
+  // Derive status dynamically from slot properties
+  const getSlotStatus = (slot: ParkingSlot) => {
+    if (slot.occupied) return "occupied"
+    if (slot.reserved) return "reserved"
+    return "available"
+  }
+
+  const getSlotColor = (status: string) => {
     switch (status) {
       case "available":
         return "bg-primary/10 border-primary text-primary hover:bg-primary/20"
@@ -25,7 +32,7 @@ export function SlotGrid({ slots, onSlotSelect }: SlotGridProps) {
     }
   }
 
-  const getStatusIcon = (status: ParkingSlot["status"]) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "available":
         return <Car className="h-4 w-4" />
@@ -56,21 +63,25 @@ export function SlotGrid({ slots, onSlotSelect }: SlotGridProps) {
           </div>
         </CardTitle>
       </CardHeader>
+
       <CardContent>
         <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
-          {slots.map((slot) => (
-            <Button
-              key={slot.id}
-              variant="outline"
-              size="sm"
-              className={`h-12 w-12 p-0 flex flex-col items-center justify-center ${getSlotColor(slot.status)}`}
-              onClick={() => slot.status === "available" && onSlotSelect(slot)}
-              disabled={slot.status !== "available"}
-            >
-              {getStatusIcon(slot.status)}
-              <span className="text-xs font-mono">{slot.number}</span>
-            </Button>
-          ))}
+          {slots.map((slot) => {
+            const status = getSlotStatus(slot)
+            return (
+              <Button
+                key={slot.slotId}
+                variant="outline"
+                size="sm"
+                className={`h-12 w-12 p-0 flex flex-col items-center justify-center ${getSlotColor(status)}`}
+                onClick={() => status === "available" && onSlotSelect(slot)}
+                disabled={status !== "available"}
+              >
+                {getStatusIcon(status)}
+                <span className="text-xs font-mono">{slot.number}</span>
+              </Button>
+            )
+          })}
         </div>
       </CardContent>
     </Card>

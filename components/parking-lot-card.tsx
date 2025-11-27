@@ -67,7 +67,7 @@ export function ParkingLotCard({ lot, onViewDetails }: ParkingLotCardProps) {
           />
         </div>
 
-        <Button onClick={() => onViewDetails(lot.id)} className="w-full" size="sm">
+        <Button onClick={() => onViewDetails(lot.lotId)} className="w-full" size="sm">
           View Details & Reserve
         </Button>
       </CardContent>
