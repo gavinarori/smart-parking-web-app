@@ -10,7 +10,10 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12)
 }
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+export async function verifyPassword(
+  password: string,
+  hashedPassword: string
+): Promise<boolean> {
   return bcrypt.compare(password, hashedPassword)
 }
 
@@ -26,17 +29,26 @@ export function verifyToken(token: string): UserSession | null {
   }
 }
 
-export async function createUser(userData: Omit<User, "_id" | "createdAt" | "updatedAt">): Promise<User> {
+export async function createUser(
+  userData: Omit<User, "_id" | "createdAt" | "updatedAt">
+): Promise<User> {
   const db = await getDatabase()
   const users = db.collection<User>("users")
 
-  // Check if user already exists
+  // Check email uniqueness
   const existingUser = await users.findOne({ email: userData.email })
   if (existingUser) {
     throw new Error("User already exists")
   }
 
+  // Check RFID uniqueness (CRITICAL)
+  const existingRfid = await users.findOne({ rfidTag: userData.rfidTag })
+  if (existingRfid) {
+    throw new Error("RFID tag already in use")
+  }
+
   const hashedPassword = await hashPassword(userData.password)
+
   const newUser: Omit<User, "_id"> = {
     ...userData,
     password: hashedPassword,
@@ -48,25 +60,25 @@ export async function createUser(userData: Omit<User, "_id" | "createdAt" | "upd
   return { ...newUser, _id: result.insertedId }
 }
 
-export async function authenticateUser(email: string, password: string): Promise<UserSession | null> {
+export async function authenticateUser(
+  email: string,
+  password: string
+): Promise<UserSession | null> {
   const db = await getDatabase()
   const users = db.collection<User>("users")
 
   const user = await users.findOne({ email })
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   const isValid = await verifyPassword(password, user.password)
-  if (!isValid) {
-    return null
-  }
+  if (!isValid) return null
 
   return {
     id: user._id!.toString(),
     email: user.email,
     name: user.name,
     phone: user.phone,
+    rfidTag: user.rfidTag,
     vehicleInfo: user.vehicleInfo,
   }
 }
@@ -77,15 +89,14 @@ export async function getUserById(id: string): Promise<UserSession | null> {
 
   try {
     const user = await users.findOne({ _id: new ObjectId(id) })
-    if (!user) {
-      return null
-    }
+    if (!user) return null
 
     return {
       id: user._id!.toString(),
       email: user.email,
       name: user.name,
       phone: user.phone,
+      rfidTag: user.rfidTag,
       vehicleInfo: user.vehicleInfo,
     }
   } catch {
