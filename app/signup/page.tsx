@@ -1,22 +1,15 @@
 "use client"
 
 import type React from "react"
+
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-
 import { useAuth } from "@/lib/hooks/useAuth"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
 
@@ -25,15 +18,12 @@ export default function SignupPage() {
     name: "",
     email: "",
     phone: "",
-    rfidTag: "",
     vehicleInfo: "",
     password: "",
     confirmPassword: "",
   })
-
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-
   const router = useRouter()
   const { register } = useAuth()
 
@@ -49,6 +39,7 @@ export default function SignupPage() {
     setIsLoading(true)
     setError("")
 
+    // Basic validation
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match")
       setIsLoading(false)
@@ -66,18 +57,12 @@ export default function SignupPage() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        rfidTag: formData.rfidTag,
         vehicleInfo: formData.vehicleInfo,
         password: formData.password,
       })
-
       router.push("/dashboard")
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Registration failed. Please try again."
-      )
+      setError(err instanceof Error ? err.message : "Registration failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -87,14 +72,9 @@ export default function SignupPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">
-            Create Account
-          </CardTitle>
-          <CardDescription>
-            Join Spot Yangu to find and reserve parking spots
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary">Create Account</CardTitle>
+          <CardDescription>Join Spot yangu to find and reserve parking spots</CardDescription>
         </CardHeader>
-
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -103,7 +83,6 @@ export default function SignupPage() {
               </Alert>
             )}
 
-            {/* Full Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <Input
@@ -117,7 +96,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -131,7 +109,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
@@ -145,35 +122,19 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* RFID Tag */}
-            <div className="space-y-2">
-              <Label htmlFor="rfidTag">RFID Tag</Label>
-              <Input
-                id="rfidTag"
-                name="rfidTag"
-                type="text"
-                placeholder="Scan or enter RFID tag"
-                value={formData.rfidTag}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            {/* Vehicle Info */}
             <div className="space-y-2">
               <Label htmlFor="vehicleInfo">Vehicle Information</Label>
               <Input
                 id="vehicleInfo"
                 name="vehicleInfo"
                 type="text"
-                placeholder="e.g. Toyota Camry - KDA 123A"
+                placeholder="e.g., Toyota Camry - ABC123"
                 value={formData.vehicleInfo}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -187,7 +148,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <Input
@@ -206,9 +166,7 @@ export default function SignupPage() {
             </Button>
 
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">
-                Already have an account?{" "}
-              </span>
+              <span className="text-muted-foreground">Already have an account? </span>
               <Link href="/login" className="text-primary hover:underline">
                 Sign in
               </Link>
@@ -216,7 +174,6 @@ export default function SignupPage() {
           </form>
         </CardContent>
       </Card>
-
       <PWAInstallPrompt />
     </div>
   )
