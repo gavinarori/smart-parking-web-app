@@ -1,10 +1,11 @@
-\import type { ObjectId } from "mongodb"
+import type { ObjectId } from "mongodb"
 
 export interface User {
   _id?: ObjectId
   email: string
   name: string
   phone: string
+  rfidTag: string
   vehicleInfo: string
   password: string
   createdAt: Date
@@ -16,5 +17,6 @@ export interface UserSession {
   email: string
   name: string
   phone: string
+  rfidTag: string
   vehicleInfo: string
 }
